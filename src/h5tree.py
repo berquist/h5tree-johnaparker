@@ -153,7 +153,43 @@ def display(
         display_attributes(obj, depth + 1, groups, stream, verbose)
 
 
-def main() -> None:
+def main(
+    filepath: str,
+    grouppath: str,
+    verbose: bool,
+    attributes: bool,
+    groups: bool,
+    level: int,
+    pattern: str,
+    output: TextIO,
+) -> None:
+    # open file and print tree
+    with h5py.File(filepath, "r") as f:
+        group: h5py.Group = f[grouppath]  # type: ignore
+        display_header(grouppath, filepath, group, output, verbose)
+        if attributes:
+            display_attributes(group, 1, groups, output, verbose)
+
+        group.visititems(
+            partial(
+                display,
+                verbose,
+                attributes,
+                groups,
+                level,
+                pattern,
+                output,
+            )
+        )
+
+    if verbose:
+        footer = "{}, {}".format(
+            str_count(total_groups, "group"), str_count(total_datasets, "dataset")
+        )
+        print("\n", footer, sep="", file=output)
+
+
+def cmdline() -> None:
     # create the parser options
     parser = argparse.ArgumentParser(prog="h5tree")
     parser.add_argument("path", type=str, help="filepath/grouppath")
@@ -185,27 +221,13 @@ def main() -> None:
 
     output = sys.stdout
 
-    # open file and print tree
-    with h5py.File(filepath, "r") as f:
-        group: h5py.Group = f[grouppath]  # type: ignore
-        display_header(grouppath, filepath, group, output, args.verbose)
-        if args.attributes:
-            display_attributes(group, 1, args.groups, output, args.verbose)
-
-        group.visititems(
-            partial(
-                display,
-                args.verbose,
-                args.attributes,
-                args.groups,
-                args.level,
-                args.pattern,
-                output,
-            )
-        )
-
-    if args.verbose:
-        footer = "{}, {}".format(
-            str_count(total_groups, "group"), str_count(total_datasets, "dataset")
-        )
-        print("\n", footer, sep="", file=output)
+    main(
+        filepath,
+        grouppath,
+        args.verbose,
+        args.attributes,
+        args.groups,
+        args.level,
+        args.pattern,
+        output,
+    )
