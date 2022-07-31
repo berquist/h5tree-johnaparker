@@ -3,10 +3,12 @@
 # TODO: * add search pattern / anti-pattern on datasets/groups
 #       * nicer verbose output for scalar, h5refernce
 
-import h5py
 import argparse
+from functools import partial
 from termcolor import colored
 from collections import defaultdict
+
+import h5py
 
 # globals
 total_groups = 0
@@ -73,6 +75,68 @@ def display_attributes(group: h5py.Group, n: int, only_groups: bool, verbose: bo
             print(attr_output)
 
 
+def display(verbose: bool, attributes: bool, groups: bool, level: int, pattern: str, name: str, obj) -> None:
+    """ display the group or dataset on a single line """
+    global total_groups, total_datasets, terminated
+
+    if pattern and pattern not in name:
+        return
+
+    depth = name.count('/')
+    # abort if below level
+    if level and depth >= level:
+        return
+
+    # reset terminated dict
+    for d in terminated:
+        if d > depth:
+            terminated[d] = False
+
+    # construct text at the front of line
+    subname = name[name.rfind('/')+1:]
+    front = ""
+    for i in range(depth):
+        if terminated[i]:
+            front = front + blank
+        else:
+            front = front + I_branch
+
+    if list(obj.parent.keys())[-1] == subname:
+        front += L_branch
+        terminated[depth] = True
+    else:
+        front += T_branch
+
+    # is group
+    if isinstance(obj, h5py.Group):
+        output = front + colored(subname, group_color)
+        if verbose:
+            message = str_count(len(obj), "object")
+            if obj.attrs:
+                message += ", " + str_count(len(obj.attrs), "attribute")
+            output += colored(short_gap + '({})'.format(message), group_color)
+
+        total_groups += 1
+        print(output)
+
+    # is dataset
+    elif not groups:
+        color = dataset_color
+        if not obj.shape:
+            color = scalar_color
+        output = front + colored(subname, dataset_color)
+
+        if verbose:
+            output += short_gap + '{}, {}'.format(obj.shape, obj.dtype)
+
+        total_datasets += 1
+        print(output)
+
+    # include attributes
+    if attributes:
+        display_attributes(obj, depth + 1, verbose)
+
+
 def main():
     # create the parser options
     parser = argparse.ArgumentParser(prog='h5tree')
@@ -96,67 +160,6 @@ def main():
     if not grouppath:
         grouppath = "/"
 
-    def display(name, obj):
-        """ display the group or dataset on a single line """
-        global total_groups, total_datasets, terminated
-
-        if args.pattern and args.pattern not in name:
-            return
-
-        depth = name.count('/')
-        # abort if below level
-        if args.level and depth >= args.level:
-            return
-
-        # reset terminated dict
-        for d in terminated:
-            if d > depth:
-                terminated[d] = False
-
-        # construct text at the front of line
-        subname = name[name.rfind('/')+1:]
-        front = ""
-        for i in range(depth):
-            if terminated[i]:
-                front = front + blank
-            else:
-                front = front + I_branch
-
-        if list(obj.parent.keys())[-1] == subname:
-            front += L_branch
-            terminated[depth] = True
-        else:
-            front += T_branch
-
-        # is group
-        if isinstance(obj, h5py.Group):
-            output = front + colored(subname, group_color)
-            if args.verbose:
-                message = str_count(len(obj), "object")
-                if obj.attrs:
-                    message += ", " + str_count(len(obj.attrs), "attribute")
-                output += colored(short_gap + '({})'.format(message), group_color)
-
-            total_groups += 1
-            print(output)
-
-        # is dataset
-        elif not args.groups:
-            color = dataset_color
-            if not obj.shape:
-                color = scalar_color
-            output = front + colored(subname, dataset_color)
-
-            if args.verbose:
-                output += short_gap + '{}, {}'.format(obj.shape, obj.dtype)
-
-            total_datasets += 1
-            print(output)
-
-        # include attributes
-        if args.attributes:
-            display_attributes(obj, depth + 1, args.verbose)
-
     # open file and print tree
     with h5py.File(filepath, 'r') as f:
         group: h5py.Group = f[grouppath]  # type: ignore
@@ -164,7 +167,7 @@ def main():
         if args.attributes:
             display_attributes(group, 1, args.verbose)
 
-        group.visititems(display)
+        group.visititems(partial(display, args.verbose, args.attributes, args.groups, args.level, args.pattern))
 
     if args.verbose:
         footer = '{}, {}'.format(str_count(total_groups, "group"), str_count(total_datasets, "dataset"))
