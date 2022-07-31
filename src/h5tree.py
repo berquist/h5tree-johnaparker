@@ -4,32 +4,32 @@
 #       * nicer verbose output for scalar, h5refernce
 
 import argparse
-from functools import partial
-from termcolor import colored
 from collections import defaultdict
+from functools import partial
 
 import h5py
+from termcolor import colored
 
 # globals
 total_groups = 0
 total_datasets = 0
-group_color = 'green'
-dataset_color = 'yellow'
-attr_color = 'red'
+group_color = "green"
+dataset_color = "yellow"
+attr_color = "red"
 scalar_color = attr_color
-short_gap = ' '*2
-long_gap = ' '*4
+short_gap = " " * 2
+long_gap = " " * 4
 
-T_branch = '├── '
-L_branch = '└── '
-I_branch = '│   '
-blank = ' '*4
+T_branch = "├── "
+L_branch = "└── "
+I_branch = "│   "
+blank = " " * 4
 
 terminated = defaultdict(lambda: False)
 
 
 def str_count(n: int, name: str) -> str:
-    """ return a string representing number of groups/datasets """
+    """return a string representing number of groups/datasets"""
     if n != 1:
         return "{} {}s".format(n, name)
     else:
@@ -37,7 +37,7 @@ def str_count(n: int, name: str) -> str:
 
 
 def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bool = False) -> None:
-    """ display the tree header """
+    """display the tree header"""
     if grouppath == "/":
         header = filepath
     else:
@@ -53,7 +53,7 @@ def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bo
 
 
 def display_attributes(group: h5py.Group, n: int, only_groups: bool, verbose: bool = False) -> None:
-    """ display the attribute on a single line """
+    """display the attribute on a single line"""
     num_attrs = len(group.attrs)
     front = ""
     for i in range(n):
@@ -63,7 +63,7 @@ def display_attributes(group: h5py.Group, n: int, only_groups: bool, verbose: bo
             front = front + I_branch
 
     if num_attrs > 0:
-        for i,attr in enumerate(group.attrs):
+        for i, attr in enumerate(group.attrs):
             if i == num_attrs - 1 and (len(group.keys()) == 0 or only_groups):
                 front_edit = front + L_branch
             else:
@@ -75,14 +75,16 @@ def display_attributes(group: h5py.Group, n: int, only_groups: bool, verbose: bo
             print(attr_output)
 
 
-def display(verbose: bool, attributes: bool, groups: bool, level: int, pattern: str, name: str, obj) -> None:
-    """ display the group or dataset on a single line """
+def display(
+    verbose: bool, attributes: bool, groups: bool, level: int, pattern: str, name: str, obj
+) -> None:
+    """display the group or dataset on a single line"""
     global total_groups, total_datasets, terminated
 
     if pattern and pattern not in name:
         return
 
-    depth = name.count('/')
+    depth = name.count("/")
     # abort if below level
     if level and depth >= level:
         return
@@ -93,7 +95,7 @@ def display(verbose: bool, attributes: bool, groups: bool, level: int, pattern: 
             terminated[d] = False
 
     # construct text at the front of line
-    subname = name[name.rfind('/')+1:]
+    subname = name[name.rfind("/") + 1 :]
     front = ""
     for i in range(depth):
         if terminated[i]:
@@ -114,7 +116,7 @@ def display(verbose: bool, attributes: bool, groups: bool, level: int, pattern: 
             message = str_count(len(obj), "object")
             if obj.attrs:
                 message += ", " + str_count(len(obj.attrs), "attribute")
-            output += colored(short_gap + '({})'.format(message), group_color)
+            output += colored(short_gap + "({})".format(message), group_color)
 
         total_groups += 1
         print(output)
@@ -127,7 +129,7 @@ def display(verbose: bool, attributes: bool, groups: bool, level: int, pattern: 
         output = front + colored(subname, dataset_color)
 
         if verbose:
-            output += short_gap + '{}, {}'.format(obj.shape, obj.dtype)
+            output += short_gap + "{}, {}".format(obj.shape, obj.dtype)
 
         total_datasets += 1
         print(output)
@@ -137,38 +139,49 @@ def display(verbose: bool, attributes: bool, groups: bool, level: int, pattern: 
         display_attributes(obj, depth + 1, verbose)
 
 
-def main():
+def main() -> None:
     # create the parser options
-    parser = argparse.ArgumentParser(prog='h5tree')
+    parser = argparse.ArgumentParser(prog="h5tree")
     parser.add_argument("path", type=str, help="filepath/grouppath")
-    parser.add_argument('-v', '--verbose', action='store_true', help='verbose output')
-    parser.add_argument('-a', '--attributes', action='store_true', help='show attributes')
-    parser.add_argument('-g', '--groups', action='store_true', help='only show groups')
-    parser.add_argument('-L', '--level', nargs='?', type=int, help='maximum number of directories to recurse into', default=None)
-    parser.add_argument('-p', '--pattern', nargs='?', type=str, help='pattern', default=None)
+    parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
+    parser.add_argument("-a", "--attributes", action="store_true", help="show attributes")
+    parser.add_argument("-g", "--groups", action="store_true", help="only show groups")
+    parser.add_argument(
+        "-L",
+        "--level",
+        nargs="?",
+        type=int,
+        help="maximum number of directories to recurse into",
+        default=None,
+    )
+    parser.add_argument("-p", "--pattern", nargs="?", type=str, help="pattern", default=None)
 
     # argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     # parse the parsed input
     filepath = args.path
-    ext = '.h5'
+    ext = ".h5"
     sep_index = args.path.find(ext) + len(ext)
 
     filepath = args.path[:sep_index]
-    grouppath = args.path[sep_index+1:]
+    grouppath = args.path[sep_index + 1 :]
     if not grouppath:
         grouppath = "/"
 
     # open file and print tree
-    with h5py.File(filepath, 'r') as f:
+    with h5py.File(filepath, "r") as f:
         group: h5py.Group = f[grouppath]  # type: ignore
         display_header(grouppath, filepath, group, args.verbose)
         if args.attributes:
             display_attributes(group, 1, args.verbose)
 
-        group.visititems(partial(display, args.verbose, args.attributes, args.groups, args.level, args.pattern))
+        group.visititems(
+            partial(display, args.verbose, args.attributes, args.groups, args.level, args.pattern)
+        )
 
     if args.verbose:
-        footer = '{}, {}'.format(str_count(total_groups, "group"), str_count(total_datasets, "dataset"))
-        print('\n', footer, sep='')
+        footer = "{}, {}".format(
+            str_count(total_groups, "group"), str_count(total_datasets, "dataset")
+        )
+        print("\n", footer, sep="")
