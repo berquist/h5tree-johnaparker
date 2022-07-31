@@ -27,7 +27,7 @@ setup(
     description=DESCRIPTION,
     license=LICENSE,
     keywords=KEYWORDS,
-    scripts=["src/h5tree.py"],
+    entry_points={"console_scripts": ['h5tree=h5tree:main']},
     url=URL,
     long_description=read('README.md'),
     long_description_content_type='text/markdown',
