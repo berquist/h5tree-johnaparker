@@ -31,7 +31,7 @@ parser.add_argument("path", type=str, help="filepath/grouppath")
 parser.add_argument('-v', '--verbose', action='store_true', help='verbose output')
 parser.add_argument('-a', '--attributes', action='store_true', help='show attributes')
 parser.add_argument('-g', '--groups', action='store_true', help='only show groups')
-parser.add_argument('-L', '--level', nargs='?', type=int, help='maximum number of directories to recuse into', default=None)
+parser.add_argument('-L', '--level', nargs='?', type=int, help='maximum number of directories to recurse into', default=None)
 parser.add_argument('-p', '--pattern', nargs='?', type=str, help='pattern', default=None)
 
 # argcomplete.autocomplete(parser)
