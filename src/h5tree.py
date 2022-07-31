@@ -49,6 +49,30 @@ def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bo
 
     print(colored(header, group_color))
 
+
+def display_attributes(group: h5py.Group, n: int, groups: bool, verbose: bool = False) -> None:
+    """ display the attribute on a single line """
+    num_attrs = len(group.attrs)
+    front = ""
+    for i in range(n):
+        if terminated[i]:
+            front = front + blank
+        else:
+            front = front + I_branch
+
+    if num_attrs > 0:
+        for i,attr in enumerate(group.attrs):
+            if i == num_attrs - 1 and (len(group.keys()) == 0 or groups):
+                front_edit = front + L_branch
+            else:
+                front_edit = front + T_branch
+            attr_output = front_edit + colored(attr, attr_color)
+
+            if verbose:
+                attr_output += colored(short_gap + str(group.attrs[attr]), None)
+            print(attr_output)
+
+
 def main():
     # create the parser options
     parser = argparse.ArgumentParser(prog='h5tree')
@@ -71,28 +95,6 @@ def main():
     grouppath = args.path[sep_index+1:]
     if not grouppath:
         grouppath = "/"
-
-    def display_attributes(group, n, verbose = False):
-        """ display the attribute on a single line """
-        num_attrs = len(group.attrs)
-        front = ""
-        for i in range(n):
-            if terminated[i]:
-                front = front + blank
-            else:
-                front = front + I_branch
-
-        if num_attrs > 0:
-            for i,attr in enumerate(group.attrs):
-                if i == num_attrs - 1 and (len(group.keys()) == 0 or args.groups):
-                    front_edit = front + L_branch
-                else:
-                    front_edit = front + T_branch
-                attr_output = front_edit + colored(attr, attr_color)
-
-                if verbose:
-                    attr_output += colored(short_gap + str(group.attrs[attr]), None)
-                print(attr_output)
 
     def display(name, obj):
         """ display the group or dataset on a single line """
