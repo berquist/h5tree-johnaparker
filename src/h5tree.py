@@ -4,9 +4,10 @@
 #       * nicer verbose output for scalar, h5refernce
 
 import argparse
+import sys
 from collections import defaultdict
 from functools import partial
-from typing import MutableMapping
+from typing import MutableMapping, TextIO
 
 import h5py
 from termcolor import colored
@@ -37,7 +38,9 @@ def str_count(n: int, name: str) -> str:
         return "{} {}".format(n, name)
 
 
-def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bool = False) -> None:
+def display_header(
+    grouppath: str, filepath: str, group: h5py.Group, stream: TextIO, verbose: bool = False
+) -> None:
     """display the tree header"""
     if grouppath == "/":
         header = filepath
@@ -50,10 +53,12 @@ def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bo
             message += ", " + str_count(len(group.attrs), "attribute")
         header += short_gap + "({})".format(message)
 
-    print(colored(header, group_color))
+    print(colored(header, group_color), file=stream)
 
 
-def display_attributes(group: h5py.Group, n: int, only_groups: bool, verbose: bool = False) -> None:
+def display_attributes(
+    group: h5py.Group, n: int, only_groups: bool, stream: TextIO, verbose: bool = False
+) -> None:
     """display the attribute on a single line"""
     num_attrs = len(group.attrs)
     front = ""
@@ -73,11 +78,18 @@ def display_attributes(group: h5py.Group, n: int, only_groups: bool, verbose: bo
 
             if verbose:
                 attr_output += colored(short_gap + str(group.attrs[attr]), None)
-            print(attr_output)
+            print(attr_output, file=stream)
 
 
 def display(
-    verbose: bool, attributes: bool, groups: bool, level: int, pattern: str, name: str, obj
+    verbose: bool,
+    attributes: bool,
+    groups: bool,
+    level: int,
+    pattern: str,
+    stream: TextIO,
+    name: str,
+    obj,
 ) -> None:
     """display the group or dataset on a single line"""
     global total_groups, total_datasets, terminated
@@ -120,7 +132,7 @@ def display(
             output += colored(short_gap + "({})".format(message), group_color)
 
         total_groups += 1
-        print(output)
+        print(output, file=stream)
 
     # is dataset
     elif not groups:
@@ -134,11 +146,11 @@ def display(
             output += short_gap + "{}, {}".format(obj.shape, obj.dtype)
 
         total_datasets += 1
-        print(output)
+        print(output, file=stream)
 
     # include attributes
     if attributes:
-        display_attributes(obj, depth + 1, verbose)
+        display_attributes(obj, depth + 1, groups, stream, verbose)
 
 
 def main() -> None:
@@ -171,19 +183,29 @@ def main() -> None:
     if not grouppath:
         grouppath = "/"
 
+    output = sys.stdout
+
     # open file and print tree
     with h5py.File(filepath, "r") as f:
         group: h5py.Group = f[grouppath]  # type: ignore
-        display_header(grouppath, filepath, group, args.verbose)
+        display_header(grouppath, filepath, group, output, args.verbose)
         if args.attributes:
-            display_attributes(group, 1, args.verbose)
+            display_attributes(group, 1, args.groups, output, args.verbose)
 
         group.visititems(
-            partial(display, args.verbose, args.attributes, args.groups, args.level, args.pattern)
+            partial(
+                display,
+                args.verbose,
+                args.attributes,
+                args.groups,
+                args.level,
+                args.pattern,
+                output,
+            )
         )
 
     if args.verbose:
         footer = "{}, {}".format(
             str_count(total_groups, "group"), str_count(total_datasets, "dataset")
         )
-        print("\n", footer, sep="")
+        print("\n", footer, sep="", file=output)
