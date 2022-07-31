@@ -34,6 +34,21 @@ def str_count(n, name):
         return "{} {}".format(n, name)
 
 
+def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bool = False):
+    """ display the tree header """
+    if grouppath == "/":
+        header = filepath
+    else:
+        header = "{}/{}".format(filepath, grouppath)
+
+    if verbose:
+        message = str_count(len(group), "object")
+        if group.attrs:
+            message += ", " + str_count(len(group.attrs), "attribute")
+        header += short_gap + "({})".format(message)
+
+    print(colored(header, group_color))
+
 def main():
     # create the parser options
     parser = argparse.ArgumentParser(prog='h5tree')
@@ -56,21 +71,6 @@ def main():
     grouppath = args.path[sep_index+1:]
     if not grouppath:
         grouppath = "/"
-
-    def display_header(verbose = False):
-        """ display the tree header """
-        if grouppath == "/":
-            header = filepath
-        else:
-            header = "{}/{}".format(filepath, grouppath)
-
-        if verbose:
-            message = str_count(len(group), "object")
-            if group.attrs:
-                message += ", " + str_count(len(group.attrs), "attribute")
-            header += short_gap + "({})".format(message)
-
-        print(colored(header, group_color))
 
     def display_attributes(group, n, verbose = False):
         """ display the attribute on a single line """
@@ -142,11 +142,11 @@ def main():
         elif not args.groups:
             color = dataset_color
             if not obj.shape:
-                color = scalar_color 
+                color = scalar_color
             output = front + colored(subname, dataset_color)
 
             if args.verbose:
-                output += short_gap + '{}, {}'.format(obj.shape, obj.dtype) 
+                output += short_gap + '{}, {}'.format(obj.shape, obj.dtype)
 
             total_datasets += 1
             print(output)
@@ -158,7 +158,7 @@ def main():
     # open file and print tree
     with h5py.File(filepath, 'r') as f:
         group = f[grouppath]
-        display_header(args.verbose)
+        display_header(grouppath, filepath, group, args.verbose)
         if args.attributes:
             display_attributes(group, 1, args.verbose)
 
