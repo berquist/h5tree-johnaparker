@@ -159,7 +159,7 @@ def main():
 
     # open file and print tree
     with h5py.File(filepath, 'r') as f:
-        group = f[grouppath]
+        group: h5py.Group = f[grouppath]  # type: ignore
         display_header(grouppath, filepath, group, args.verbose)
         if args.attributes:
             display_attributes(group, 1, args.verbose)
