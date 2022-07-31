@@ -7,7 +7,7 @@ import argparse
 import sys
 from collections import defaultdict
 from functools import partial
-from typing import MutableMapping, TextIO
+from typing import MutableMapping, Optional, TextIO
 
 import h5py
 from termcolor import colored
@@ -85,8 +85,8 @@ def display(
     verbose: bool,
     attributes: bool,
     groups: bool,
-    level: int,
-    pattern: str,
+    level: Optional[int],
+    pattern: Optional[str],
     stream: TextIO,
     name: str,
     obj,
@@ -159,8 +159,8 @@ def main(
     verbose: bool,
     attributes: bool,
     groups: bool,
-    level: int,
-    pattern: str,
+    level: Optional[int],
+    pattern: Optional[str],
     output: TextIO,
 ) -> None:
     # open file and print tree
