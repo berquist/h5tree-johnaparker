@@ -1,4 +1,4 @@
-#!/opt/miniconda3/bin/python
+#!/usr/bin/env python
 
 # TODO: * add search pattern / anti-pattern on datasets/groups
 #       * nicer verbose output for scalar, h5refernce
