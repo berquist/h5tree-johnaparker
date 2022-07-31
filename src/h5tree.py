@@ -50,7 +50,7 @@ def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bo
     print(colored(header, group_color))
 
 
-def display_attributes(group: h5py.Group, n: int, groups: bool, verbose: bool = False) -> None:
+def display_attributes(group: h5py.Group, n: int, only_groups: bool, verbose: bool = False) -> None:
     """ display the attribute on a single line """
     num_attrs = len(group.attrs)
     front = ""
@@ -62,7 +62,7 @@ def display_attributes(group: h5py.Group, n: int, groups: bool, verbose: bool = 
 
     if num_attrs > 0:
         for i,attr in enumerate(group.attrs):
-            if i == num_attrs - 1 and (len(group.keys()) == 0 or groups):
+            if i == num_attrs - 1 and (len(group.keys()) == 0 or only_groups):
                 front_edit = front + L_branch
             else:
                 front_edit = front + T_branch
@@ -88,8 +88,8 @@ def main():
 
     # parse the parsed input
     filepath = args.path
-    locater = '.h5'
-    sep_index = args.path.find(locater) + len(locater)
+    ext = '.h5'
+    sep_index = args.path.find(ext) + len(ext)
 
     filepath = args.path[:sep_index]
     grouppath = args.path[sep_index+1:]
