@@ -6,6 +6,7 @@
 import argparse
 from collections import defaultdict
 from functools import partial
+from typing import MutableMapping
 
 import h5py
 from termcolor import colored
@@ -25,7 +26,7 @@ L_branch = "└── "
 I_branch = "│   "
 blank = " " * 4
 
-terminated = defaultdict(lambda: False)
+terminated: MutableMapping[int, bool] = defaultdict(lambda: False)
 
 
 def str_count(n: int, name: str) -> str:
@@ -123,9 +124,10 @@ def display(
 
     # is dataset
     elif not groups:
-        color = dataset_color
-        if not obj.shape:
-            color = scalar_color
+        # ???
+        # color = dataset_color
+        # if not obj.shape:
+        #     color = scalar_color
         output = front + colored(subname, dataset_color)
 
         if verbose:

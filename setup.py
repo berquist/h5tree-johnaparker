@@ -31,6 +31,7 @@ setup(
     description=DESCRIPTION,
     license=LICENSE,
     keywords=KEYWORDS,
+    packages=find_packages(),
     entry_points={"console_scripts": ["h5tree=h5tree:main"]},
     url=URL,
     long_description=read("README.md"),
