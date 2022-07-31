@@ -26,7 +26,7 @@ blank = ' '*4
 terminated = defaultdict(lambda: False)
 
 
-def str_count(n, name):
+def str_count(n: int, name: str) -> str:
     """ return a string representing number of groups/datasets """
     if n != 1:
         return "{} {}s".format(n, name)
@@ -34,7 +34,7 @@ def str_count(n, name):
         return "{} {}".format(n, name)
 
 
-def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bool = False):
+def display_header(grouppath: str, filepath: str, group: h5py.Group, verbose: bool = False) -> None:
     """ display the tree header """
     if grouppath == "/":
         header = filepath
