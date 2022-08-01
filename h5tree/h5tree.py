@@ -19,6 +19,7 @@ group_color = "green"
 dataset_color = "yellow"
 attr_color = "red"
 scalar_color = attr_color
+type_color = "cyan"
 short_gap = " " * 2
 long_gap = " " * 4
 
@@ -136,14 +137,25 @@ def display(
 
     # is dataset
     elif not groups:
-        # ???
-        # color = dataset_color
-        # if not obj.shape:
-        #     color = scalar_color
-        output = front + colored(subname, dataset_color)
+        if isinstance(obj, h5py.Dataset):
+            color = dataset_color
+            has_shape = hasattr(obj, "shape")
+            if not has_shape:
+                color = scalar_color
+            output = front + colored(subname, color)
 
-        if verbose:
-            output += short_gap + "{}, {}".format(obj.shape, obj.dtype)
+            if verbose:
+                if not has_shape:
+                    shape = ()
+                else:
+                    shape = obj.shape
+                output += short_gap + "{}, {}".format(shape, obj.dtype)
+
+        elif isinstance(obj, h5py.Datatype):
+            output = front + colored(subname, type_color)
+
+        else:
+            raise RuntimeError("unknown obj type: {}".format(type(obj)))
 
         total_datasets += 1
         print(output, file=stream)
@@ -161,14 +173,14 @@ def main(
     groups: bool,
     level: Optional[int],
     pattern: Optional[str],
-    output: TextIO,
+    stream: TextIO,
 ) -> None:
     # open file and print tree
     with h5py.File(filepath, "r") as f:
         group: h5py.Group = f[grouppath]  # type: ignore
-        display_header(grouppath, filepath, group, output, verbose)
+        display_header(grouppath, filepath, group, stream, verbose)
         if attributes:
-            display_attributes(group, 1, groups, output, verbose)
+            display_attributes(group, 1, groups, stream, verbose)
 
         group.visititems(
             partial(
@@ -178,7 +190,7 @@ def main(
                 groups,
                 level,
                 pattern,
-                output,
+                stream,
             )
         )
 
@@ -186,7 +198,7 @@ def main(
         footer = "{}, {}".format(
             str_count(total_groups, "group"), str_count(total_datasets, "dataset")
         )
-        print("\n", footer, sep="", file=output)
+        print("\n", footer, sep="", file=stream)
 
 
 def cmdline() -> None:
@@ -219,7 +231,7 @@ def cmdline() -> None:
     if not grouppath:
         grouppath = "/"
 
-    output = sys.stdout
+    stream = sys.stdout
 
     main(
         filepath,
@@ -229,5 +241,5 @@ def cmdline() -> None:
         args.groups,
         args.level,
         args.pattern,
-        output,
+        stream,
     )
